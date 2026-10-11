@@ -150,7 +150,7 @@
           <div class="bg-gradient-to-br from-[#0e1726] to-[#1a2942] text-white p-6 rounded-2xl shadow-sm flex flex-col justify-between">
             <div>
               <span class="text-[10px] uppercase font-bold tracking-widest text-teal-400">Pencapaian Unggul</span>
-              <h4 class="text-lg font-bold mt-1">Literasi & Numerasi Tinggi</h4>
+              <h4 class="text-lg font-bold mt-1">Literasi &amp; Numerasi Tinggi</h4>
               <p class="text-xs text-slate-300 mt-2 leading-relaxed">
                 Siswa dengan capaian ganda tinggi (Skor &ge; 70) direkomendasikan untuk akselerasi peminatan sains multidisiplin dan olimpiade.
               </p>
@@ -239,10 +239,10 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-xl font-bold text-slate-900">Bank Soal Asesmen</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Instrumen AKM: Literasi Membaca &amp; Penalaran Numerasi</p>
+            <p class="text-xs text-slate-400 mt-0.5">Instrumen AKM: Literasi Membaca &amp; Penalaran Numerasi Fase E</p>
           </div>
           <button onclick="handleSeedStandardQuestions()" id="btnSeedQuestions" class="px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition">
-            Isi Soal Standar Otomatis
+            Isi Soal Standar Otomatis (33 Soal)
           </button>
         </div>
 
@@ -252,9 +252,9 @@
               <tr>
                 <th class="p-4 w-20">ID</th>
                 <th class="p-4 w-28">KATEGORI</th>
-                <th class="p-4 w-32">TIPE</th>
+                <th class="p-4 w-36">TIPE</th>
                 <th class="p-4">PERTANYAAN</th>
-                <th class="p-4 text-center w-20">KUNCI</th>
+                <th class="p-4 text-center w-28">KUNCI</th>
                 <th class="p-4 text-center w-16">BOBOT</th>
               </tr>
             </thead>
@@ -349,12 +349,12 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGIKA DASBOR ADMIN MENGGUNAKAN FIRESTORE SDK -->
+  <!-- SCRIPT LOGIKA DASBOR ADMIN DENGAN FIRESTORE SDK -->
   <script>
     let currentActiveSchool = null;
     let cachedReports = [];
 
-    // Helper untuk menunggu inisialisasi window.db dan window.firestoreTools
+    // Helper untuk menunggu window.db dan window.firestoreTools
     function waitForFirestore() {
       return new Promise((resolve) => {
         if (window.db && window.firestoreTools) return resolve();
@@ -567,17 +567,17 @@
       try {
         const snap = await getCollectionDocs('questions');
         if (snap.empty) {
-          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada soal terdaftar. Klik tombol "Isi Soal Standar Otomatis".</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada soal terdaftar. Klik "Isi Soal Standar Otomatis (33 Soal)".</td></tr>';
           return;
         }
         tbody.innerHTML = snap.docs.map(doc => {
           const q = doc.data();
           return `
             <tr>
-              <td class="p-4 font-mono font-bold text-slate-600">${doc.id.slice(0, 6)}</td>
+              <td class="p-4 font-mono font-bold text-slate-600">${q.id || doc.id.slice(0, 6)}</td>
               <td class="p-4 font-bold ${q.kategori === 'Literasi' ? 'text-indigo-600' : 'text-amber-600'}">${q.kategori}</td>
-              <td class="p-4">${q.tipe}</td>
-              <td class="p-4 font-medium text-slate-800">${q.pertanyaan}</td>
+              <td class="p-4 font-semibold text-slate-600">${q.tipe}</td>
+              <td class="p-4 font-medium text-slate-800 leading-snug">${q.pertanyaan}</td>
               <td class="p-4 text-center font-mono font-bold text-emerald-600">${q.kunci}</td>
               <td class="p-4 text-center font-mono">${q.bobot || 5}</td>
             </tr>
@@ -589,23 +589,236 @@
     async function handleSeedStandardQuestions() {
       const btn = document.getElementById('btnSeedQuestions');
       btn.disabled = true;
-      btn.textContent = "Mengunggah Soal...";
+      btn.textContent = "Mengimpor 33 Soal ke Firestore...";
 
-      const initialQuestions = [
+      // Koleksi 33 Butir Soal Lengkap dari Google Spreadsheet Anda
+      const allQuestions = [
         {
+          id: "LIT-01",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Infografik Kementerian Kelautan dan Perikanan (KKP/BRSDM) memaparkan fakta: (1) Asam lemak Omega 3 mengoptimalkan pembentukan sel saraf otak balita pada 1000 hari pertama. (2) Protein ikan memicu regenerasi sel tubuh dan berfungsi sebagai antioksidan. (3) Konsumsi ikan laut mengurangi risiko stroke dan jantung koroner secara signifikan dibanding konsumsi lemak jenuh.",
+          pertanyaan: "Pilihlah DUA pernyataan yang SESUAI dengan fakta ilmiah infografis di atas!",
+          opsi_a: "Ikan merupakan sumber Omega 3 yang menunjang kecerdasan kognitif otak anak.",
+          opsi_b: "Mengonsumsi ikan berkhasiat membantu mengurangi risiko terserang penyakit kardiovaskular.",
+          opsi_c: "Kandungan vitamin B6 ikan lebih banyak bila dibandingkan dengan semua jenis moluska.",
+          opsi_d: "Manfaat protein ikan hanya dapat diserap oleh anak dengan usia di bawah tiga tahun.",
+          opsi_e: "Ikan dapat menggantikan seluruh fungsi karbohidrat utama tubuh secara total.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "LIT-02",
           kategori: "Literasi",
           tipe: "Pilihan Ganda",
-          stimulus: "Perubahan iklim global menyebabkan kenaikan suhu muka laut secara bertahap dan memicu cuaca ekstrem di berbagai wilayah tropis.",
-          pertanyaan: "Apa gagasan pokok yang dibahas pada kutipan teks di atas?",
-          opsi_a: "Kenaikan suhu muka laut dan dampaknya terhadap cuaca ekstrem",
-          opsi_b: "Perbedaan iklim di daerah kutub dan daerah tropis",
-          opsi_c: "Upaya mitigasi bencana kekeringan global",
-          opsi_d: "Pencemaran limbah plastik di wilayah laut tropis",
-          opsi_e: "Peningkatan aktivitas vulkanik di dasar samudera",
+          stimulus: "Laporan transisi energi menunjukkan adopsi kendaraan listrik (EV) di perkotaan memangkas emisi knalpot. Namun, studi Life Cycle Assessment mengungkap proses pemurnian nikel dan produksi baterai membutuhkan listrik termal batu bara rata-rata 70 kWh per kWh baterai. Akibatnya, pada 30.000 km pertama, EV memiliki jejak karbon kumulatif 15% lebih tinggi dibanding kendaraan bensin sebelum mencapai titik impas dan menjadi jauh lebih bersih setelah melewati jarak tersebut.",
+          pertanyaan: "Berdasarkan wacana di atas, simpulan yang paling tepat mengenai efektivitas lingkungan dari kendaraan listrik adalah...",
+          opsi_a: "Kendaraan listrik langsung memangkas emisi karbon seketika sejak hari pertama dirakit.",
+          opsi_b: "Manfaat penurunan emisi gas rumah kaca baru terwujud secara riil setelah melampaui batas jarak tempuh tertentu.",
+          opsi_c: "Kendaraan bensin terbukti lebih ramah lingkungan secara mutlak di sepanjang siklus pakainya.",
+          opsi_d: "Pemurnian bijih nikel tidak berdampak pada emisi karena berlokasi jauh dari area perkotaan.",
+          opsi_e: "Kendaraan listrik tidak cocok digunakan di perkotaan karena menumpuk limbah baterai sejak awal.",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "LIT-03",
+          kategori: "Literasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Riset perilaku 1.200 remaja membuktikan algoritma medsos memperpanjang durasi tatap layar dengan menyajikan konten yang serupa riwayat pencarian. Remaja yang mencari keluhan kecemasan terus-menerus disuguhi diagnosa mandiri (self-diagnosis) tak tervalidasi. Fenomena gelembung informasi (filter bubble) ini memicu bias konfirmasi seolah gangguan klinis dialami merata oleh semua orang sebayanya.",
+          pertanyaan: "Tentukan validitas pernyataan berikut terkait evaluasi kritis konten digital: (1) Banyaknya likes menjamin kebenaran isi diagnosa medis | (2) Filter bubble mempersempit ragam perspektif informasi yang diterima siswa | (3) Konfirmasi ke instansi kesehatan kredibel merupakan sikap literasi digital yang tepat",
+          opsi_a: "Pernyataan 1: Banyaknya likes menjamin kebenaran diagnosa medis",
+          opsi_b: "Pernyataan 2: Filter bubble membatasi sudut pandang pengguna",
+          opsi_c: "Pernyataan 3: Rujukan medis harus bersumber dari lembaga resmi atau tenaga ahli",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Salah,Benar,Benar",
+          bobot: 5
+        },
+        {
+          id: "LIT-04",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Kecerdasan Artifisial Generatif (Gen-AI) diadopsi secara luas di sekolah. Penggunaan AI mempercepat pembuatan draf tulisan dan resume ilmiah. Namun, survei kognitif menunjukkan siswa yang sepenuhnya menyerahkan proses sintesis bacaan kepada AI mengalami penurunan retensi konsep hingga 35% dibanding siswa yang meringkas secara manual. Ketergantungan struktural pada draf instan berisiko menumpulkan penalaran mendalam.",
+          pertanyaan: "Pernyataan manakah yang paling akurat merefleksikan posisi argumen penulis terhadap penggunaan Gen-AI di dunia akademis?",
+          opsi_a: "Gen-AI harus dilarang total di lingkungan sekolah karena menurunkan retensi ingatan.",
+          opsi_b: "Pemanfaatan Gen-AI perlu diimbangi dengan proses kognitif aktif agar kecepatan kerja tidak mengorbankan kedalaman nalar.",
+          opsi_c: "Meringkas teks secara manual sudah tidak relevan lagi mengingat efisiensi waktu AI modern.",
+          opsi_d: "Siswa pengguna AI dipastikan memiliki daya nalar divergen yang lebih tinggi.",
+          opsi_e: "Kemampuan sintesis bacaan tidak berkaitan langsung dengan pemahaman jangka panjang.",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "LIT-05",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Sorgum dan singkong mulai dipromosikan sebagai substitusi tepung terigu impor di Indonesia. Tanaman sorgum memiliki efisiensi penggunaan air 30% lebih tinggi dibanding padi dan jagung, serta toleran terhadap lahan kering beriklim ekstrem. Selain indeks glikemik yang lebih rendah, pengembangan komoditas lokal ini dapat menekan ketergantungan impor gandum yang mencapai 11 juta ton per tahun.",
+          pertanyaan: "Tentukan DUA alasan logis mengapa sorgum strategis untuk ketahanan pangan nasional!",
+          opsi_a: "Sorgum memiliki daya tahan tinggi terhadap kekeringan dan lahan marjinal.",
+          opsi_b: "Pengembangan sorgum dapat menekan beban devisa akibat impor gandum yang tinggi.",
+          opsi_c: "Sorgum memerlukan curah hujan dan irigasi tergenang yang jauh lebih tinggi daripada padi sawah.",
+          opsi_d: "Harga tepung sorgum di pasar global diatur secara monopoli oleh negara produsen tunggal.",
+          opsi_e: "Sorgum tidak mengandung karbohidrat sehingga aman bagi kebutuhan energi pekerja berat.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "LIT-06",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Fenomena Fast Fashion menghasilkan tren pakaian berganti setiap minggu dengan harga murah. Namun, industri ini menjadi penyumbang 10% emisi karbon global dan menghasilkan limbah mikroplastik sintetik saat pencucian serat poliester. Sekitar 85% produk tekstil berakhir di tempat pembuangan akhir setiap tahunnya karena material campurannya sulit didaur ulang secara ekonomis.",
+          pertanyaan: "Makna tersirat dari istilah 'biaya tersembunyi' (hidden cost) pada fenomena fast fashion adalah...",
+          opsi_a: "Konsumen harus membayar biaya pengiriman kilat yang jauh lebih mahal dari harga baju.",
+          opsi_b: "Harga beli pakaian yang murah ditebus dengan kerusakan lingkungan dan timbunan limbah global.",
+          opsi_c: "Produsen pakaian lokal mengalami kebangkrutan karena kalah bersaing secara digital.",
+          opsi_d: "Pajak impor tekstil luar negeri dinaikkan berulang kali oleh otoritas bea cukai.",
+          opsi_e: "Pakaian cepat rusak sehingga konsumen harus membeli mesin cuci khusus serat poliester.",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "LIT-07",
+          kategori: "Literasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Tidur teratur 7-8 jam sangat penting bagi konsolidasi memori otak remaja. Fase tidur gelombang lambat (Slow-Wave Sleep) memindahkan memori jangka pendek dari hipokampus ke neokorteks sebagai memori jangka panjang. Begadang semalam sebelum ujian hanya memberikan ilusi kesiapan, karena ketiadaan fase tidur REM menurunkan akurasi pemecahan masalah kompleks hingga 40%.",
+          pertanyaan: "Tentukan validitas pernyataan ilmiah berikut: (1) Begadang semalam suntuk meningkatkan daya ingat jangka panjang | (2) Konsolidasi memori terjadi secara optimal saat tidur gelombang lambat | (3) Kekurangan tidur REM mengganggu performa penyelesaian masalah rumit",
+          opsi_a: "Pernyataan 1: Begadang semalam suntuk menunjang retensi jangka panjang",
+          opsi_b: "Pernyataan 2: Konsolidasi ingatan berpindah ke neokorteks saat tidur",
+          opsi_c: "Pernyataan 3: Tidur REM yang cukup menunjang kemampuan analitis siswa",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Salah,Benar,Benar",
+          bobot: 5
+        },
+        {
+          id: "LIT-08",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Krisis air tanah di kawasan pesisir utara Jawa memicu fenomena amblesan tanah (land subsidence) hingga 10 cm per tahun. Penyedotan air bawah tanah secara masif oleh sektor industri dan permukiman menyebabkan ruang antarbutir tanah memadat. Kondisi ini diperparah oleh hilangnya sabuk bakau pesisir yang semula berfungsi menahan abrasi gelombang laut.",
+          pertanyaan: "Solusi struktural jangka panjang yang paling tepat untuk menghentikan laju amblesan tanah pesisir adalah...",
+          opsi_a: "Membangun tanggul beton yang semakin tinggi setiap tahun tanpa menghentikan ekstraksi air.",
+          opsi_b: "Menyediakan jaringan perpipaan air permukaan terintegrasi serta melarang eksploitasi air tanah dalam.",
+          opsi_c: "Menebang hutan mangrove untuk dijadikan kawasan tambak garam kristal.",
+          opsi_d: "Memindahkan seluruh aktivitas nelayan ke perairan lepas pantai tanpa intervensi daratan.",
+          opsi_e: "Mengeringkan muara sungai agar endapan lumpur tidak terbawa ke pantai.",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "LIT-09",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Dalam cerpen 'Warisan Tanah Humus', Pak Danu menolak tawaran pengembang perumahan untuk menjual sawah peninggalan leluhurnya. Meski anak sulungnya menuntut uang muka bisnis kafe modern di kota, Pak Danu yakin sawah tersebut adalah sumber daulat pangan keluarga yang tidak akan habis jika terus dirawat dengan pupuk organik.",
+          pertanyaan: "Pilihlah DUA nilai moral atau karakter yang tercermin dari sikap tokoh Pak Danu dalam kutipan cerita!",
+          opsi_a: "Konsistensi memegang teguh prinsip hidup harmonis dengan alam dan pertanian.",
+          opsi_b: "Kesadaran mendalam mengenai pentingnya keberlanjutan pangan keluarga jangka panjang.",
+          opsi_c: "Ketidakpedulian mutlak terhadap masa depan dan kebahagiaan seluruh keturunannya.",
+          opsi_d: "Keserakahan untuk menunggu harga tanah naik berlipat ganda di masa mendatang.",
+          opsi_e: "Kekhawatiran berlebihan terhadap perkembangan teknologi dan sistem ekonomi perkotaan.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "LIT-10",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Survei OECD menunjukkan Indonesia memproduksi sampah makanan (food loss & waste) sekitar 115–184 kg per kapita per tahun. Paradoksnya, jutaan warga masih mengalami kerentanan gizi. Pemborosan ini mayoritas terjadi pada rantai distribusi pascapanen tradisional dan kebiasaan menyisakan makanan di sektor perhotelan serta konsumsi rumah tangga.",
+          pertanyaan: "Tindakan praktis siswa di lingkungan sekolah yang paling relevan untuk menekan food waste adalah...",
+          opsi_a: "Menghindari makan siang di sekolah sama sekali demi menghemat uang saku.",
+          opsi_b: "Mengambil porsi makanan secukupnya dan menghabiskan bekal tanpa sisa.",
+          opsi_c: "Membeli makanan siap saji dalam kemasan plastik sekali pakai dalam jumlah banyak.",
+          opsi_d: "Menimbun stok roti di laci meja kelas hingga melewati tanggal kedaluwarsa.",
+          opsi_e: "Membuang makanan sisa ke selokan agar cepat diurai oleh air hujan.",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "LIT-11",
+          kategori: "Literasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Bioplastik berbahan pati singkong dapat terurai tanah dalam 90 hari, sedangkan kantong plastik minyak bumi membutuhkan 400 tahun. Kendati demikian, produksi bioplastik skala industri berpotensi memicu alih fungsi lahan perkebunan singkong dari tanaman konsumsi pangan menjadi komoditas industri murni jika regulasinya tidak diawasi.",
+          pertanyaan: "Evaluasi ketepatan argumen berikut: (1) Bioplastik membantu mengurangi akumulasi limbah padat di tanah | (2) Bioplastik bebas dari segala tantangan tata guna lahan | (3) Inovasi material ramah lingkungan harus tetap mempertimbangkan stabilitas pasokan pangan",
+          opsi_a: "Pernyataan 1: Waktu urai bioplastik jauh lebih singkat dari plastik konvensional",
+          opsi_b: "Pernyataan 2: Produksi bioplastik tidak menimbulkan dampak kompetisi lahan pangan",
+          opsi_c: "Pernyataan 3: Perlunya regulasi seimbang antara industri bioplastik dan ketahanan pangan",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Benar,Salah,Benar",
+          bobot: 5
+        },
+        {
+          id: "LIT-12",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Penerapan konsep Ekonomi Sirkular pada pengelolaan sampah elektronik (e-waste) berfokus pada pemulihan logam mulia seperti emas dan tembaga dari papan sirkuit komputer bekas. Hal ini menurunkan intensitas penambangan bijih primer di alam yang kerap merusak bentang hutan hujan.",
+          pertanyaan: "Inti pesan dari penerapan Ekonomi Sirkular pada sektor barang elektronik adalah...",
+          opsi_a: "Mengurangi ketergantungan eksploitasi alam baru melalui daur ulang komponen bernilai tinggi.",
+          opsi_b: "Membatasi masyarakat agar tidak menggunakan peralatan elektronik dalam kehidupan sehari-hari.",
+          opsi_c: "Mengharuskan pabrik memproduksi komputer dengan harga seragam di seluruh dunia.",
+          opsi_d: "Membuang limbah elektronik langsung ke laut dalam karena mengandung partikel logam mulia.",
+          opsi_e: "Membakar papan sirkuit bekas di ruang terbuka agar logam mulia terpisah cepat.",
           kunci: "A",
           bobot: 5
         },
         {
+          id: "LIT-13",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Revolusi digital perpustakaan memungkinkan siswa mengakses jurnal bereputasi secara gratis. Namun, muncul fenomena information overload yang membuat pembaca cenderung melakukan skimming tanpa meresapi analisis metodologi penelitian.",
+          pertanyaan: "Pilihlah DUA strategi literasi membaca kritis yang efektif untuk mengatasi information overload!",
+          opsi_a: "Menetapkan tujuan membaca secara spesifik dan menyaring kredibilitas sumber tulisan.",
+          opsi_b: "Membuat catatan intisari konsep dan mengonfirmasi argumen lintas referensi ilmiah.",
+          opsi_c: "Membaca seluruh artikel yang muncul di mesin pencari tanpa melakukan kurasi awal.",
+          opsi_d: "Mengabaikan data statistik yang tersaji pada grafik artikel ilmiah.",
+          opsi_e: "Hanya membaca judul dan kesimpulan tanpa memeriksa logika isi pembahasan.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "LIT-14",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Restorasi terumbu karang dengan metode bioreeftek menggunakan substrat tempurung kelapa terbukti mempercepat koloni karang baru hingga dua kali lipat dibanding metode beton polos, serta ramah terhadap biota bentik di perairan dangkal.",
+          pertanyaan: "Keunggulan utama metode bioreeftek berdasarkan teks di atas adalah...",
+          opsi_a: "Dibuat dari bahan alami terbarukan serta lebih adaptif mempercepat pertumbuhan karang.",
+          opsi_b: "Dapat dipasang di palung laut yang tidak tersinari matahari sama sekali.",
+          opsi_c: "Membuat air laut berubah menjadi air tawar yang dapat langsung diminum warga pesisir.",
+          opsi_d: "Menghilangkan seluruh predator alami ikan karang dari ekosistem perairan.",
+          opsi_e: "Menghasilkan listrik mandiri untuk kebutuhan penerangan kapal nelayan lokal.",
+          kunci: "A",
+          bobot: 5
+        },
+        {
+          id: "LIT-15",
+          kategori: "Literasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Vaksinasi bekerja dengan melatih sistem imun mengenali antigen patogen tanpa menimbulkan penyakit parah. Pembentukan kekebalan kelompok (herd immunity) tercapai apabila cakupan imunisasi populasi melampaui 80%, melindungi individu yang memiliki kontraindikasi medis.",
+          pertanyaan: "Tentukan kebenaran pernyataan: (1) Vaksin membuat tubuh membentuk antibodi spesifik | (2) Herd immunity hanya melindungi orang yang sudah divaksinasi | (3) Cakupan imunisasi tinggi melindungi individu yang rentan secara medis",
+          opsi_a: "Pernyataan 1: Vaksin merangsang pembentukan sistem memori imunologis tubuh",
+          opsi_b: "Pernyataan 2: Kekebalan kelompok tidak berdampak pada mereka yang belum divaksin",
+          opsi_c: "Pernyataan 3: Tingginya persentase warga tervaksin memutus rantai transmisi virus",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Benar,Salah,Benar",
+          bobot: 5
+        },
+        {
+          id: "LIT-16",
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Urban farming berbasis hidroponik di atap gedung perkotaan memangkas jejak karbon logistik transportasi sayuran dari pedesaan serta menurunkan suhu atap gedung hingga 3 derajat Celsius melalui efek evapotranspirasi daun.",
+          pertanyaan: "Manfaat ganda urban farming bagi lingkungan perkotaan adalah...",
+          opsi_a: "Mengurangi emisi transportasi bahan pangan dan mereduksi panas mikro gedung.",
+          opsi_b: "Menghapuskan kebutuhan pasokan beras dan protein hewani perkotaan secara mandiri.",
+          opsi_c: "Membuat gedung perkotaan bebas dari kebutuhan perawatan pipa air hujan.",
+          opsi_d: "Menghilangkan polusi asap kendaraan bermotor di seluruh jalan protokol perkotaan.",
+          opsi_e: "Menggantikan seluruh fungsi pendingin ruangan (AC) secara mekanis.",
+          kunci: "A",
+          bobot: 5
+        },
+        {
+          id: "NUM-01",
           kategori: "Numerasi",
           tipe: "Pilihan Ganda",
           stimulus: "Sebuah tangki air berkapasitas 1.200 liter diisi menggunakan pipa dengan debit tetap 40 liter per menit mulai pukul 08.00 WIB.",
@@ -617,19 +830,244 @@
           opsi_e: "09.30 WIB",
           kunci: "B",
           bobot: 5
+        },
+        {
+          id: "NUM-02",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Toko buku memberikan diskon berjenjang: Diskon 20% untuk buku pertama seharga Rp100.000, dan diskon tambahan 10% dari total tagihan jika pembeli membeli minimal 2 buku.",
+          pertanyaan: "Jika Andi membeli 2 buku yang masing-masing berharga awal Rp100.000, tentukan DUA pernyataan nominal yang BENAR!",
+          opsi_a: "Harga 2 buku setelah diskon pertama adalah Rp160.000.",
+          opsi_b: "Total pembayaran akhir yang harus dibayar Andi adalah Rp144.000.",
+          opsi_c: "Total potongan harga kumulatif yang didapatkan Andi adalah Rp50.000.",
+          opsi_d: "Harga akhir yang dibayar Andi adalah Rp150.000 pas.",
+          opsi_e: "Andi tidak mendapatkan diskon tambahan karena total belanja kurang dari Rp300.000.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "NUM-03",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Rasio perbandingan jumlah siswa laki-laki dan perempuan di kelas X-A adalah 3 : 2. Jika total seluruh siswa di kelas tersebut adalah 35 orang.",
+          pertanyaan: "Berapa banyak jumlah siswa laki-laki di kelas tersebut?",
+          opsi_a: "14 orang",
+          opsi_b: "18 orang",
+          opsi_c: "21 orang",
+          opsi_d: "24 orang",
+          opsi_e: "25 orang",
+          kunci: "C",
+          bobot: 5
+        },
+        {
+          id: "NUM-04",
+          kategori: "Numerasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Sebuah denah rumah berskala 1 : 150. Pada denah tersebut, ruang keluarga digambar dengan ukuran panjang 4 cm dan lebar 3 cm.",
+          pertanyaan: "Tentukan validitas perhitungan berikut: (1) Panjang ruang keluarga sebenarnya adalah 6 meter | (2) Lebar ruang keluarga sebenarnya adalah 4,5 meter | (3) Luas ruang keluarga sebenarnya adalah 27 meter persegi",
+          opsi_a: "Pernyataan 1: Panjang sebenarnya 6 m",
+          opsi_b: "Pernyataan 2: Lebar sebenarnya 4,5 m",
+          opsi_c: "Pernyataan 3: Luas sebenarnya 27 m²",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Benar,Benar,Benar",
+          bobot: 5
+        },
+        {
+          id: "NUM-05",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Data nilai asesmen matematika dari 5 orang siswa adalah: 75, 80, 85, 90, dan 95.",
+          pertanyaan: "Berapakah rata-rata (mean) dari data nilai kelima siswa tersebut?",
+          opsi_a: "80",
+          opsi_b: "82",
+          opsi_c: "85",
+          opsi_d: "87",
+          opsi_e: "90",
+          kunci: "C",
+          bobot: 5
+        },
+        {
+          id: "NUM-06",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Sebuah mobil menempuh jarak 180 km dalam waktu 3 jam dengan kecepatan rata-rata konstan tanpa berhenti.",
+          pertanyaan: "Pilihlah DUA pernyataan kecepatan atau jarak tempuh yang BENAR!",
+          opsi_a: "Kecepatan rata-rata mobil tersebut adalah 60 km/jam.",
+          opsi_b: "Jika mobil berjalan selama 4 jam dengan laju yang sama, jarak yang ditempuh adalah 240 km.",
+          opsi_c: "Kecepatan rata-rata mobil tersebut setara dengan 100 meter per detik.",
+          opsi_d: "Waktu yang dibutuhkan untuk menempuh jarak 300 km adalah 6 jam.",
+          opsi_e: "Mobil tersebut melambat setiap 30 menit sekali.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "NUM-07",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Seorang pedagang membeli satu kardus air mineral berisi 24 botol dengan modal Rp48.000. Setiap botol dijual eceran seharga Rp3.000.",
+          pertanyaan: "Berapakah total keuntungan bersih yang diperoleh jika seluruh botol terjual habis?",
+          opsi_a: "Rp18.000",
+          opsi_b: "Rp20.000",
+          opsi_c: "Rp24.000",
+          opsi_d: "Rp28.000",
+          opsi_e: "Rp30.000",
+          kunci: "C",
+          bobot: 5
+        },
+        {
+          id: "NUM-08",
+          kategori: "Numerasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Sebuah kolam renang berbentuk balok dengan panjang 10 m, lebar 5 m, dan kedalaman air 2 m.",
+          pertanyaan: "Tentukan kebenaran perhitungan: (1) Volume air dalam kolam adalah 100 m³ | (2) Volume air tersebut setara dengan 100.000 liter | (3) Luas permukaan dasar kolam adalah 50 m²",
+          opsi_a: "Pernyataan 1: Volume kolam 100 m³",
+          opsi_b: "Pernyataan 2: Kapasitas setara 100.000 liter",
+          opsi_c: "Pernyataan 3: Luas dasar kolam 50 m²",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Benar,Benar,Benar",
+          bobot: 5
+        },
+        {
+          id: "NUM-09",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Modal simpanan koperasi sebesar Rp5.000.000 mendapatkan bunga tunggal sebesar 6% per tahun.",
+          pertanyaan: "Berapakah total uang simpanan tersebut setelah disimpan selama 2 tahun?",
+          opsi_a: "Rp5.300.000",
+          opsi_b: "Rp5.500.000",
+          opsi_c: "Rp5.600.000",
+          opsi_d: "Rp5.800.000",
+          opsi_e: "Rp6.000.000",
+          kunci: "C",
+          bobot: 5
+        },
+        {
+          id: "NUM-10",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Data penjualan beras: Hari Senin 50 kg, Selasa 60 kg, Rabu 40 kg, Kamis 70 kg, Jumat 80 kg.",
+          pertanyaan: "Pilihlah DUA pernyataan statistika yang BENAR berdasarkan data tersebut!",
+          opsi_a: "Rata-rata penjualan beras per hari adalah 60 kg.",
+          opsi_b: "Median dari data penjualan beras selama 5 hari tersebut adalah 60 kg.",
+          opsi_c: "Penjualan tertinggi terjadi pada hari Kamis sebesar 70 kg.",
+          opsi_d: "Total penjualan beras selama 5 hari adalah 350 kg.",
+          opsi_e: "Hari Selasa memiliki selisih paling rendah dibanding hari Jumat.",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "NUM-11",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Sebuah kebun berbentuk persegi panjang berukuran panjang 25 meter dan lebar 15 meter. Di sekeliling kebun dipasang tiang pagar dengan jarak antar tiang 2 meter.",
+          pertanyaan: "Berapa banyak tiang pagar yang dibutuhkan di sekeliling kebun tersebut?",
+          opsi_a: "35 tiang",
+          opsi_b: "40 tiang",
+          opsi_c: "45 tiang",
+          opsi_d: "50 tiang",
+          opsi_e: "80 tiang",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "NUM-12",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Sebuah lampu hemat energi 20 Watt menyala rata-rata 10 jam per hari selama 30 hari dalam satu bulan.",
+          pertanyaan: "Berapa total konsumsi energi listrik lampu tersebut dalam satuan kiloWatt-hour (kWh)?",
+          opsi_a: "3 kWh",
+          opsi_b: "6 kWh",
+          opsi_c: "9 kWh",
+          opsi_d: "12 kWh",
+          opsi_e: "60 kWh",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "NUM-13",
+          kategori: "Numerasi",
+          tipe: "Tabel Benar/Salah",
+          stimulus: "Sebuah dadu bersisi 6 seimbang dilempar undi sebanyak satu kali.",
+          pertanyaan: "Tentukan kebenaran peluang berikut: (1) Peluang muncul angka ganjil adalah 1/2 | (2) Peluang muncul angka prima genap adalah 1/6 | (3) Peluang muncul angka lebih dari 4 adalah 1/3",
+          opsi_a: "Pernyataan 1: Peluang muncul ganjil adalah 3/6 = 1/2",
+          opsi_b: "Pernyataan 2: Peluang muncul prima genap (angka 2) adalah 1/6",
+          opsi_c: "Pernyataan 3: Peluang muncul angka 5 atau 6 adalah 2/6 = 1/3",
+          opsi_d: "-",
+          opsi_e: "-",
+          kunci: "Benar,Benar,Benar",
+          bobot: 5
+        },
+        {
+          id: "NUM-14",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Dalam suatu barisan aritmetika, suku pertama (U1) adalah 4 dan beda (b) adalah 3.",
+          pertanyaan: "Berapakah nilai suku ke-10 (U10) dari barisan tersebut?",
+          opsi_a: "28",
+          opsi_b: "31",
+          opsi_c: "34",
+          opsi_d: "37",
+          opsi_e: "40",
+          kunci: "B",
+          bobot: 5
+        },
+        {
+          id: "NUM-15",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda Kompleks",
+          stimulus: "Sebuah segitiga siku-siku memiliki panjang sisi alas 6 cm dan tinggi 8 cm.",
+          pertanyaan: "Tentukan DUA ukuran geometri yang BENAR terkait segitiga tersebut!",
+          opsi_a: "Panjang sisi miring (hipotenusa) segitiga adalah 10 cm.",
+          opsi_b: "Luas daerah segitiga tersebut adalah 24 cm².",
+          opsi_c: "Keliling total segitiga tersebut adalah 30 cm.",
+          opsi_d: "Panjang sisi miring segitiga adalah 14 cm.",
+          opsi_e: "Luas daerah segitiga tersebut adalah 48 cm².",
+          kunci: "A,B",
+          bobot: 5
+        },
+        {
+          id: "NUM-16",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Sebuah cetakan kue berbentuk lingkaran memiliki diameter 28 cm (gunakan π = 22/7).",
+          pertanyaan: "Berapakah luas alas cetakan kue tersebut?",
+          opsi_a: "154 cm²",
+          opsi_b: "308 cm²",
+          opsi_c: "616 cm²",
+          opsi_d: "1.232 cm²",
+          opsi_e: "2.464 cm²",
+          kunci: "C",
+          bobot: 5
+        },
+        {
+          id: "NUM-17",
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Dari 40 orang siswa di suatu kelas, 25 orang gemar bulu tangkis, 20 orang gemar futsal, dan 5 orang tidak gemar kedua cabang olahraga tersebut.",
+          pertanyaan: "Berapa banyak siswa yang gemar bulu tangkis sekaligus futsal?",
+          opsi_a: "5 orang",
+          opsi_b: "10 orang",
+          opsi_c: "12 orang",
+          opsi_d: "15 orang",
+          opsi_e: "20 orang",
+          kunci: "B",
+          bobot: 5
         }
       ];
 
       try {
-        for (const q of initialQuestions) {
+        for (const q of allQuestions) {
           await addDocToCollection('questions', q);
         }
+        alert(`Berhasil mengimpor ${allQuestions.length} butir soal lengkap ke Cloud Firestore!`);
         await loadBankSoal();
       } catch (err) {
         alert("Gagal menambahkan soal: " + err.message);
       } finally {
         btn.disabled = false;
-        btn.textContent = "Isi Soal Standar Otomatis";
+        btn.textContent = "Isi Soal Standar Otomatis (33 Soal)";
       }
     }
 
