@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Portal - LitNum Fase E</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="firebase.js"></script>
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
+    @media print {
+      body * { visibility: hidden !important; }
+      #printableArea, #printableArea * { visibility: visible !important; }
+      #printableArea {
+        position: absolute !important; left: 0 !important; top: 0 !important;
+        width: 100% !important; border: none !important; box-shadow: none !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex">
+
+  <!-- ================= AUTH MODAL ADMIN ================= -->
+  <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+      <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      </div>
+      <h2 class="text-lg font-bold text-slate-900">Sign In Administrator</h2>
+      <p class="text-xs text-slate-500 mb-4">Akses Dasbor CBT LitNum Fase E</p>
+
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">Email</label>
+          <input type="email" id="inputAdminEmail" value="admin@litnum.id" class="w-full text-xs px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">Password</label>
+          <input type="password" id="inputAdminPass" value="admin123" class="w-full text-xs px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+        <p id="authError" class="text-xs text-rose-500 hidden text-center">Email atau password salah.</p>
+        <button onclick="handleAdminLogin()" id="btnSubmitLogin" class="w-full bg-[#45c3b8] hover:bg-[#3bb1a6] text-white font-bold py-2.5 rounded-xl text-xs transition">
+          Sign In
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SIDEBAR NAVIGASI ================= -->
+  <aside class="w-64 bg-[#0d1624] text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-800">
+    <div class="p-6 border-b border-slate-800/80 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-400 to-indigo-500 flex items-center justify-center font-bold text-slate-900 text-xs">
+        LN
+      </div>
+      <div>
+        <h1 class="text-sm font-extrabold text-white tracking-widest uppercase">LITNUM PANEL</h1>
+        <p class="text-[9px] text-cyan-400 font-semibold tracking-wider">FASE E EVALUATION</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 p-4 space-y-1.5 text-xs font-semibold">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-teal-500/10 text-teal-400 font-bold transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </button>
+
+      <button onclick="switchTab('groups')" id="nav-groups" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Participant groups
+      </button>
+
+      <button onclick="switchTab('questions')" id="nav-questions" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Bank Soal
+      </button>
+
+      <button onclick="switchTab('reports')" id="nav-reports" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Reports
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800 text-[11px] text-slate-400">
+      <button onclick="handleSignOut()" class="w-full hover:text-rose-400 transition flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- ================= KONTEN UTAMA ================= -->
+  <main class="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scroll">
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+      <h2 id="pageTitle" class="text-lg font-bold text-slate-900">Dashboard Asesmen</h2>
+      <a href="index.html" target="_blank" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-bold transition">
+        Buka Lembar Siswa &rarr;
+      </a>
+    </header>
+
+    <div class="p-8">
+      
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-semibold uppercase text-slate-400">Total Peserta</span>
+            <div class="mt-3">
+              <p id="dashTotalSiswa" class="text-3xl font-extrabold text-slate-900">0</p>
+              <p class="text-[11px] text-slate-400 mt-1"><span id="dashTotalSchools" class="font-bold text-slate-700">0</span> Sekolah terdaftar</p>
+            </div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-semibold uppercase text-slate-400">Selesai Ujian</span>
+            <div class="mt-3">
+              <p id="dashSudahTes" class="text-3xl font-extrabold text-emerald-600">0</p>
+              <p class="text-[11px] text-slate-400 mt-1"><span id="dashBelumTes" class="font-bold text-slate-700">0</span> Siswa belum tes</p>
+            </div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-semibold uppercase text-slate-400">Rata-rata Literasi</span>
+            <div class="mt-3">
+              <p id="dashAvgLit" class="text-3xl font-extrabold text-indigo-600">0</p>
+              <p class="text-[11px] text-slate-400 mt-1">Skala 0 - 100</p>
+            </div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <span class="text-xs font-semibold uppercase text-slate-400">Rata-rata Numerasi</span>
+            <div class="mt-3">
+              <p id="dashAvgNum" class="text-3xl font-extrabold text-amber-600">0</p>
+              <p class="text-[11px] text-slate-400 mt-1">Skala 0 - 100</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Aktivitas Ujian Terakhir</h4>
+            <div id="recentActivityList" class="space-y-3">
+              <p class="text-xs text-slate-400 text-center py-4">Belum ada aktivitas ujian siswa.</p>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-br from-[#0e1726] to-[#1a2942] text-white p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] uppercase font-bold tracking-widest text-teal-400">Pencapaian Unggul</span>
+              <h4 class="text-lg font-bold mt-1">Literasi & Numerasi Tinggi</h4>
+              <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                Siswa dengan capaian ganda tinggi (Skor $\ge 70$) direkomendasikan untuk akselerasi peminatan sains multidisiplin dan olimpiade.
+              </p>
+              <p id="dashBothHigh" class="text-4xl font-extrabold text-teal-300 mt-4">0 <span class="text-xs font-normal text-slate-400">Siswa</span></p>
+            </div>
+            <div class="pt-4 border-t border-slate-700/60 mt-4 flex gap-2">
+              <button onclick="switchTab('groups')" class="flex-1 py-2 px-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl text-xs font-bold transition text-center">
+                + Modul Token
+              </button>
+              <button onclick="switchTab('reports')" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition text-center">
+                Lihat Rekap
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: PARTICIPANT GROUPS & TOKENS -->
+      <section id="tab-groups" class="hidden space-y-6">
+        <div id="viewGroupList" class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xl font-bold text-slate-900">Participant Groups (Sekolah)</h3>
+            <button onclick="showCreateGroupForm()" class="px-4 py-2 bg-[#45c3b8] hover:bg-[#3bb1a6] text-white rounded-xl text-xs font-bold transition">
+              + Tambah Sekolah
+            </button>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-400 font-semibold border-b">
+                <tr><th class="p-4">SEKOLAH</th><th class="p-4">PROVINSI</th><th class="p-4">KABUPATEN/KOTA</th><th class="p-4 text-right">AKSI</th></tr>
+              </thead>
+              <tbody id="tableGroupsBody" class="divide-y text-slate-700">
+                <tr><td colspan="4" class="p-6 text-center text-slate-400">Memuat data sekolah...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Form Tambah Sekolah -->
+        <div id="viewGroupCreate" class="hidden max-w-xl bg-white border rounded-2xl shadow-sm p-6 space-y-4">
+          <h3 class="text-base font-bold text-slate-900">Registrasi Sekolah Baru</h3>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Nama Sekolah</label>
+            <input type="text" id="groupName" placeholder="Contoh: SMAN 10 Bandung" class="w-full px-3 py-2 border rounded-xl text-xs">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Provinsi</label>
+              <input type="text" id="groupProvince" value="Jawa Barat" class="w-full px-3 py-2 border rounded-xl text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Kabupaten/Kota</label>
+              <input type="text" id="groupRegency" value="Kota Bandung" class="w-full px-3 py-2 border rounded-xl text-xs">
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button onclick="showGroupListView()" class="px-4 py-2 border rounded-xl text-xs font-semibold">Batal</button>
+            <button onclick="submitNewGroup()" id="btnSaveGroup" class="px-4 py-2 bg-[#45c3b8] text-white rounded-xl text-xs font-bold">Simpan</button>
+          </div>
+        </div>
+
+        <!-- Detail Sekolah & Generator Token -->
+        <div id="viewSchoolDetail" class="hidden space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b">
+            <div>
+              <button onclick="showGroupListView()" class="text-xs text-slate-500 hover:text-slate-800 font-bold mb-1">&larr; Kembali ke Daftar Sekolah</button>
+              <h3 id="detailSchoolName" class="text-2xl font-black text-slate-900"></h3>
+              <p id="detailSchoolLocation" class="text-xs text-slate-400"></p>
+            </div>
+            <button onclick="showCreateTokenModal()" class="px-4 py-2 bg-[#45c3b8] hover:bg-[#3bb1a6] text-white rounded-xl text-xs font-bold">
+              + Generate Token Ujian
+            </button>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Daftar Token Rombel / Kelas Aktif</h4>
+            <div id="schoolTokensList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <p class="text-xs text-slate-400">Belum ada token yang dibuat untuk sekolah ini.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: BANK SOAL -->
+      <section id="tab-questions" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Bank Soal Asesmen</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Instrumen AKM: Literasi Membaca & Penalaran Numerasi</p>
+          </div>
+          <button onclick="handleSeedStandardQuestions()" id="btnSeedQuestions" class="px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition">
+            Isi Soal Standar Otomatis
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-400 font-semibold border-b">
+              <tr>
+                <th class="p-4 w-20">ID</th>
+                <th class="p-4 w-28">KATEGORI</th>
+                <th class="p-4 w-32">TIPE</th>
+                <th class="p-4">PERTANYAAN</th>
+                <th class="p-4 text-center w-20">KUNCI</th>
+                <th class="p-4 text-center w-16">BOBOT</th>
+              </tr>
+            </thead>
+            <tbody id="tableQuestionsBody" class="divide-y text-slate-700">
+              <tr><td colspan="6" class="p-6 text-center text-slate-400">Memuat butir soal...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 4: REPORTS & RAPOR INDIVIDU -->
+      <section id="tab-reports" class="hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Rekapitulasi Hasil Ujian</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Pantau capaian literasi & numerasi peserta didik secara berkala</p>
+          </div>
+          <button onclick="exportReportsToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">
+            Export CSV
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scroll">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-slate-50 text-slate-500 font-semibold border-b">
+                <tr>
+                  <th class="p-4 text-center w-12">NO</th>
+                  <th class="p-4">NAMA</th>
+                  <th class="p-4">KELAS</th>
+                  <th class="p-4">SEKOLAH</th>
+                  <th class="p-4 text-center">LIT</th>
+                  <th class="p-4 text-center">NUM</th>
+                  <th class="p-4 text-center">STATUS</th>
+                  <th class="p-4 min-w-[200px]">REKOMENDASI MAPEL</th>
+                  <th class="p-4 text-center">RAPOR</th>
+                </tr>
+              </thead>
+              <tbody id="tableReportsBody" class="divide-y text-slate-700">
+                <tr><td colspan="9" class="p-6 text-center text-slate-400">Memuat hasil nilai peserta...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ================= MODAL CETAK RAPOR SISWA ================= -->
+  <div id="modalReport" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="printableArea" class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto custom-scroll">
+      <div class="flex justify-between items-start pb-4 border-b border-slate-100">
+        <div>
+          <span class="text-[11px] font-black uppercase tracking-widest text-teal-600 block">INDIVIDUAL ASSESSMENT REPORT</span>
+          <h2 class="text-xl font-extrabold text-slate-900">Asesmen Diagnostik LitNum Fase E</h2>
+        </div>
+        <button onclick="closeReportModal()" class="text-slate-400 hover:text-slate-600 p-1 no-print">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="p-4 bg-slate-50 rounded-2xl border text-xs grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Nama Lengkap</span><span id="repNama" class="font-bold text-slate-900"></span></div>
+        <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Kelas</span><span id="repKelas" class="font-bold text-slate-900"></span></div>
+        <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Sekolah</span><span id="repSekolah" class="font-bold text-slate-900"></span></div>
+      </div>
+
+      <div class="border rounded-2xl overflow-hidden">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 font-bold border-b">
+            <tr><th class="p-3">Domain</th><th class="p-3 text-center">Skor</th><th class="p-3 text-center">Kategori</th></tr>
+          </thead>
+          <tbody class="divide-y">
+            <tr><td class="p-3 font-semibold">Literasi Membaca</td><td id="repSkorLit" class="p-3 text-center font-bold text-indigo-600"></td><td id="repKatLit" class="p-3 text-center"></td></tr>
+            <tr><td class="p-3 font-semibold">Penalaran Numerasi</td><td id="repSkorNum" class="p-3 text-center font-bold text-amber-600"></td><td id="repKatNum" class="p-3 text-center"></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="p-4 bg-slate-50 border rounded-2xl text-xs space-y-2">
+        <span class="font-bold block text-slate-800">Rekomendasi Peminatan:</span>
+        <p id="repMapel" class="text-slate-700"></p>
+        <span class="font-bold block text-slate-800 mt-2">Pengembangan Diri:</span>
+        <p id="repDev" class="text-slate-700 italic"></p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 no-print">
+        <button onclick="closeReportModal()" class="px-4 py-2 border rounded-xl text-xs font-bold">Tutup</button>
+        <button onclick="window.print()" class="px-5 py-2 bg-teal-600 text-white rounded-xl text-xs font-bold">Cetak / PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIKA DASBOR ADMIN DENGAN FIRESTORE -->
+  <script>
+    let db = null;
+    let auth = null;
+    let currentActiveSchool = null;
+    let cachedReports = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
+        db = firebase.firestore();
+        auth = firebase.auth();
+      }
+    });
+
+    function handleAdminLogin() {
+      const email = document.getElementById('inputAdminEmail').value.trim();
+      const pass = document.getElementById('inputAdminPass').value.trim();
+      const err = document.getElementById('authError');
+
+      if (email === "admin@litnum.id" && pass === "admin123") {
+        document.getElementById('adminAuthModal').classList.add('hidden');
+        switchTab('dashboard');
+      } else {
+        err.classList.remove('hidden');
+      }
+    }
+
+    function handleSignOut() {
+      document.getElementById('adminAuthModal').classList.remove('hidden');
+    }
+
+    function switchTab(tab) {
+      ['dashboard', 'groups', 'questions', 'reports'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition";
+      });
+
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      document.getElementById(`nav-${tab}`).className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-teal-500/10 text-teal-400 font-bold transition";
+
+      const titleMap = { dashboard: 'Dashboard Asesmen', groups: 'Participant groups', questions: 'Bank Soal', reports: 'Reports' };
+      document.getElementById('pageTitle').textContent = titleMap[tab];
+
+      if (tab === 'dashboard') loadDashboardData();
+      if (tab === 'groups') loadSchools();
+      if (tab === 'questions') loadBankSoal();
+      if (tab === 'reports') loadReportsData();
+    }
+
+    async function loadDashboardData() {
+      if (!db) return;
+      try {
+        const resultsSnap = await db.collection('results').get();
+        const schoolsSnap = await db.collection('schools').get();
+        
+        const totalTes = resultsSnap.size;
+        document.getElementById('dashTotalSchools').textContent = schoolsSnap.size;
+        document.getElementById('dashSudahTes').textContent = totalTes;
+        document.getElementById('dashTotalSiswa').textContent = totalTes;
+
+        let sumLit = 0, sumNum = 0, bothHigh = 0;
+        const recentList = [];
+
+        resultsSnap.forEach(doc => {
+          const d = doc.data();
+          sumLit += Number(d.skorLit || 0);
+          sumNum += Number(d.skorNum || 0);
+          if (d.skorLit >= 70 && d.skorNum >= 70) bothHigh++;
+          recentList.push(d);
+        });
+
+        document.getElementById('dashAvgLit').textContent = totalTes > 0 ? Math.round(sumLit / totalTes) : 0;
+        document.getElementById('dashAvgNum').textContent = totalTes > 0 ? Math.round(sumNum / totalTes) : 0;
+        document.getElementById('dashBothHigh').innerHTML = `${bothHigh} <span class="text-xs font-normal text-slate-400">Siswa</span>`;
+
+        const recentBox = document.getElementById('recentActivityList');
+        if (recentList.length === 0) {
+          recentBox.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Belum ada aktivitas ujian siswa.</p>';
+        } else {
+          recentBox.innerHTML = recentList.slice(-5).reverse().map(r => `
+            <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+              <div>
+                <p class="font-bold text-slate-800">${r.studentName}</p>
+                <p class="text-[10px] text-slate-400">${r.className} &bull; ${r.schoolName}</p>
+              </div>
+              <div class="font-bold"><span class="text-indigo-600">L:${r.skorLit}</span> | <span class="text-amber-600">N:${r.skorNum}</span></div>
+            </div>
+          `).join('');
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadSchools() {
+      if (!db) return;
+      const tbody = document.getElementById('tableGroupsBody');
+      try {
+        const snap = await db.collection('schools').get();
+        if (snap.empty) {
+          tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Belum ada sekolah terdaftar.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = snap.docs.map(doc => {
+          const d = doc.data();
+          return `
+            <tr onclick="openSchoolDetail('${doc.id}', '${d.name}', '${d.regency}', '${d.province}')" class="hover:bg-slate-50 cursor-pointer">
+              <td class="p-4 font-bold text-slate-900">${d.name}</td>
+              <td class="p-4">${d.province}</td>
+              <td class="p-4">${d.regency}</td>
+              <td class="p-4 text-right text-teal-600 font-bold">&rarr; Detail</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) { tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-rose-500">Error memuat data.</td></tr>'; }
+    }
+
+    function showCreateGroupForm() {
+      document.getElementById('viewGroupList').classList.add('hidden');
+      document.getElementById('viewGroupCreate').classList.remove('hidden');
+    }
+
+    function showGroupListView() {
+      document.getElementById('viewGroupList').classList.remove('hidden');
+      document.getElementById('viewGroupCreate').classList.add('hidden');
+      document.getElementById('viewSchoolDetail').classList.add('hidden');
+      loadSchools();
+    }
+
+    async function submitNewGroup() {
+      if (!db) return;
+      const name = document.getElementById('groupName').value.trim();
+      const province = document.getElementById('groupProvince').value.trim();
+      const regency = document.getElementById('groupRegency').value.trim();
+      if (!name) return alert('Nama sekolah harus diisi!');
+
+      await db.collection('schools').add({ name, province, regency, createdAt: new Date() });
+      showGroupListView();
+    }
+
+    async function openSchoolDetail(id, name, reg, prov) {
+      currentActiveSchool = { id, name, reg, prov };
+      document.getElementById('viewGroupList').classList.add('hidden');
+      document.getElementById('viewSchoolDetail').classList.remove('hidden');
+      document.getElementById('detailSchoolName').textContent = name;
+      document.getElementById('detailSchoolLocation').textContent = `${reg}, ${prov}`;
+      loadSchoolTokens(id);
+    }
+
+    async function loadSchoolTokens(schoolId) {
+      if (!db) return;
+      const container = document.getElementById('schoolTokensList');
+      try {
+        const snap = await db.collection('tokens').where('schoolId', '==', schoolId).get();
+        if (snap.empty) {
+          container.innerHTML = '<p class="text-xs text-slate-400">Belum ada token yang dibuat untuk sekolah ini.</p>';
+          return;
+        }
+        container.innerHTML = snap.docs.map(doc => {
+          const t = doc.data();
+          return `
+            <div class="p-4 bg-slate-50 border rounded-2xl flex items-center justify-between">
+              <div>
+                <span class="text-xs font-extrabold text-slate-900 block">${t.className}</span>
+                <span class="text-xs font-mono font-bold tracking-widest text-teal-600">${t.tokenCode}</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.status === 'Enabled' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}">
+                ${t.status}
+              </span>
+            </div>
+          `;
+        }).join('');
+      } catch (e) { container.innerHTML = '<p class="text-xs text-rose-500">Error memuat token.</p>'; }
+    }
+
+    async function showCreateTokenModal() {
+      const cls = prompt("Masukkan Nama Kelas / Rombel (Contoh: X - 1):", "X - 1");
+      if (!cls || !currentActiveSchool) return;
+
+      const randomToken = "UJI" + Math.floor(100 + Math.random() * 900);
+      await db.collection('tokens').add({
+        schoolId: currentActiveSchool.id,
+        schoolName: currentActiveSchool.name,
+        className: cls,
+        tokenCode: randomToken,
+        status: 'Enabled',
+        createdAt: new Date()
+      });
+      loadSchoolTokens(currentActiveSchool.id);
+    }
+
+    async function loadBankSoal() {
+      if (!db) return;
+      const tbody = document.getElementById('tableQuestionsBody');
+      try {
+        const snap = await db.collection('questions').get();
+        if (snap.empty) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada soal terdaftar. Klik "Isi Soal Standar Otomatis".</td></tr>';
+          return;
+        }
+        tbody.innerHTML = snap.docs.map(doc => {
+          const q = doc.data();
+          return `
+            <tr>
+              <td class="p-4 font-mono font-bold text-slate-600">${doc.id.slice(0, 6)}</td>
+              <td class="p-4 font-bold ${q.kategori === 'Literasi' ? 'text-indigo-600' : 'text-amber-600'}">${q.kategori}</td>
+              <td class="p-4">${q.tipe}</td>
+              <td class="p-4 font-medium text-slate-800">${q.pertanyaan}</td>
+              <td class="p-4 text-center font-mono font-bold text-emerald-600">${q.kunci}</td>
+              <td class="p-4 text-center font-mono">${q.bobot || 5}</td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-rose-500">Error memuat soal.</td></tr>'; }
+    }
+
+    async function handleSeedStandardQuestions() {
+      if (!db) return;
+      const btn = document.getElementById('btnSeedQuestions');
+      btn.disabled = true;
+      btn.textContent = "Mengunggah Soal...";
+
+      const initialQuestions = [
+        {
+          kategori: "Literasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Perubahan iklim global menyebabkan kenaikan suhu muka laut secara bertahap dan memicu cuaca ekstrem di berbagai wilayah tropis.",
+          pertanyaan: "Apa gagasan pokok yang dibahas pada kutipan teks di atas?",
+          opsi_a: "Kenaikan suhu muka laut dan dampaknya terhadap cuaca ekstrem",
+          opsi_b: "Perbedaan iklim di daerah kutub dan daerah tropis",
+          opsi_c: "Upaya mitigasi bencana kekeringan global",
+          opsi_d: "Pencemaran limbah plastik di wilayah laut tropis",
+          opsi_e: "Peningkatan aktivitas vulkanik di dasar samudera",
+          kunci: "A",
+          bobot: 5
+        },
+        {
+          kategori: "Numerasi",
+          tipe: "Pilihan Ganda",
+          stimulus: "Sebuah tangki air berkapasitas 1.200 liter diisi menggunakan pipa dengan debit tetap 40 liter per menit mulai pukul 08.00 WIB.",
+          pertanyaan: "Pada pukul berapa tangki air tersebut akan terisi penuh?",
+          opsi_a: "08.20 WIB",
+          opsi_b: "08.30 WIB",
+          opsi_c: "08.45 WIB",
+          opsi_d: "09.00 WIB",
+          opsi_e: "09.30 WIB",
+          kunci: "B",
+          bobot: 5
+        }
+      ];
+
+      for (const q of initialQuestions) {
+        await db.collection('questions').add(q);
+      }
+      btn.disabled = false;
+      btn.textContent = "Isi Soal Standar Otomatis";
+      loadBankSoal();
+    }
+
+    async function loadReportsData() {
+      if (!db) return;
+      const tbody = document.getElementById('tableReportsBody');
+      try {
+        const snap = await db.collection('results').get();
+        if (snap.empty) {
+          tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">Belum ada siswa yang menyelesaikan ujian.</td></tr>';
+          return;
+        }
+        cachedReports = snap.docs.map(doc => doc.data());
+        tbody.innerHTML = cachedReports.map((r, i) => `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 text-center font-bold text-slate-400">${i + 1}</td>
+            <td class="p-4 font-bold text-slate-900">${r.studentName}</td>
+            <td class="p-4">${r.className}</td>
+            <td class="p-4">${r.schoolName}</td>
+            <td class="p-4 text-center font-bold text-indigo-600">${r.skorLit}</td>
+            <td class="p-4 text-center font-bold text-amber-600">${r.skorNum}</td>
+            <td class="p-4 text-center font-bold ${r.litNumTinggi === 'Ya' ? 'text-emerald-600' : 'text-slate-400'}">${r.litNumTinggi || 'Tidak'}</td>
+            <td class="p-4 text-xs">${r.rekomendasiMapel || '-'}</td>
+            <td class="p-4 text-center">
+              <button onclick="viewReportModal(${i})" class="px-2.5 py-1 bg-teal-50 text-teal-700 font-bold rounded-lg border border-teal-200">Rapor</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) { tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-rose-500">Error memuat rekap.</td></tr>'; }
+    }
+
+    function viewReportModal(idx) {
+      const r = cachedReports[idx];
+      if (!r) return;
+      document.getElementById('repNama').textContent = r.studentName;
+      document.getElementById('repKelas').textContent = r.className;
+      document.getElementById('repSekolah').textContent = r.schoolName;
+      document.getElementById('repSkorLit').textContent = r.skorLit;
+      document.getElementById('repKatLit').textContent = r.katLit || (r.skorLit >= 70 ? 'Tinggi' : 'Sedang');
+      document.getElementById('repSkorNum').textContent = r.skorNum;
+      document.getElementById('repKatNum').textContent = r.katNum || (r.skorNum >= 70 ? 'Tinggi' : 'Sedang');
+      document.getElementById('repMapel').textContent = r.rekomendasiMapel || 'Biologi, Fisika, Matematika Tingkat Lanjut';
+      document.getElementById('repDev').textContent = r.pengembanganDiri || 'Latih kemampuan analisa wacana kritis dan pemecahan masalah multidisiplin.';
+      document.getElementById('modalReport').classList.remove('hidden');
+    }
+
+    function closeReportModal() {
+      document.getElementById('modalReport').classList.add('hidden');
+    }
+
+    function exportReportsToCSV() {
+      if (!cachedReports || cachedReports.length === 0) return alert('Belum ada data untuk diunduh.');
+      const headers = ["No", "Nama", "Kelas", "Sekolah", "Skor Literasi", "Skor Numerasi", "LitNum Tinggi", "Rekomendasi Mapel"];
+      const rows = cachedReports.map((r, i) => [
+        i + 1,
+        `"${r.studentName}"`,
+        `"${r.className}"`,
+        `"${r.schoolName}"`,
+        r.skorLit,
+        r.skorNum,
+        `"${r.litNumTinggi || 'Tidak'}"`,
+        `"${(r.rekomendasiMapel || '').replace(/"/g, '""')}"`
+      ]);
+      const csv = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "Rekap_Nilai_LitNum_Fase_E.csv";
+      link.click();
+    }
+  </script>
+</body>
+</html>
