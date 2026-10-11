@@ -7,11 +7,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDK Compat -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="firebase.js"></script>
+  <!-- Muat firebase.js sebagai ES Module -->
+  <script type="module" src="firebase.js"></script>
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -155,7 +152,7 @@
               <span class="text-[10px] uppercase font-bold tracking-widest text-teal-400">Pencapaian Unggul</span>
               <h4 class="text-lg font-bold mt-1">Literasi & Numerasi Tinggi</h4>
               <p class="text-xs text-slate-300 mt-2 leading-relaxed">
-                Siswa dengan capaian ganda tinggi (Skor $\ge 70$) direkomendasikan untuk akselerasi peminatan sains multidisiplin dan olimpiade.
+                Siswa dengan capaian ganda tinggi (Skor &ge; 70) direkomendasikan untuk akselerasi peminatan sains multidisiplin dan olimpiade.
               </p>
               <p id="dashBothHigh" class="text-4xl font-extrabold text-teal-300 mt-4">0 <span class="text-xs font-normal text-slate-400">Siswa</span></p>
             </div>
@@ -242,7 +239,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-xl font-bold text-slate-900">Bank Soal Asesmen</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Instrumen AKM: Literasi Membaca & Penalaran Numerasi</p>
+            <p class="text-xs text-slate-400 mt-0.5">Instrumen AKM: Literasi Membaca &amp; Penalaran Numerasi</p>
           </div>
           <button onclick="handleSeedStandardQuestions()" id="btnSeedQuestions" class="px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition">
             Isi Soal Standar Otomatis
@@ -273,7 +270,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-xl font-bold text-slate-900">Rekapitulasi Hasil Ujian</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Pantau capaian literasi & numerasi peserta didik secara berkala</p>
+            <p class="text-xs text-slate-400 mt-0.5">Pantau capaian literasi &amp; numerasi peserta didik secara berkala</p>
           </div>
           <button onclick="exportReportsToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold">
             Export CSV
@@ -352,19 +349,44 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOGIKA DASBOR ADMIN DENGAN FIRESTORE -->
+  <!-- SCRIPT LOGIKA DASBOR ADMIN MENGGUNAKAN FIRESTORE SDK -->
   <script>
-    let db = null;
-    let auth = null;
     let currentActiveSchool = null;
     let cachedReports = [];
 
-    window.addEventListener('DOMContentLoaded', () => {
-      if (typeof firebase !== 'undefined' && firebase.apps.length > 0) {
-        db = firebase.firestore();
-        auth = firebase.auth();
-      }
-    });
+    // Helper untuk menunggu inisialisasi window.db dan window.firestoreTools
+    function waitForFirestore() {
+      return new Promise((resolve) => {
+        if (window.db && window.firestoreTools) return resolve();
+        const interval = setInterval(() => {
+          if (window.db && window.firestoreTools) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
+    async function getCollectionDocs(colName) {
+      await waitForFirestore();
+      const { collection, getDocs } = window.firestoreTools;
+      const colRef = collection(window.db, colName);
+      return await getDocs(colRef);
+    }
+
+    async function addDocToCollection(colName, data) {
+      await waitForFirestore();
+      const { collection, addDoc } = window.firestoreTools;
+      const colRef = collection(window.db, colName);
+      return await addDoc(colRef, data);
+    }
+
+    async function getDocsByQuery(colName, field, op, value) {
+      await waitForFirestore();
+      const { collection, getDocs, query, where } = window.firestoreTools;
+      const q = query(collection(window.db, colName), where(field, op, value));
+      return await getDocs(q);
+    }
 
     function handleAdminLogin() {
       const email = document.getElementById('inputAdminEmail').value.trim();
@@ -402,10 +424,9 @@
     }
 
     async function loadDashboardData() {
-      if (!db) return;
       try {
-        const resultsSnap = await db.collection('results').get();
-        const schoolsSnap = await db.collection('schools').get();
+        const resultsSnap = await getCollectionDocs('results');
+        const schoolsSnap = await getCollectionDocs('schools');
         
         const totalTes = resultsSnap.size;
         document.getElementById('dashTotalSchools').textContent = schoolsSnap.size;
@@ -445,10 +466,10 @@
     }
 
     async function loadSchools() {
-      if (!db) return;
       const tbody = document.getElementById('tableGroupsBody');
+      tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Memuat data sekolah...</td></tr>';
       try {
-        const snap = await db.collection('schools').get();
+        const snap = await getCollectionDocs('schools');
         if (snap.empty) {
           tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-slate-400">Belum ada sekolah terdaftar.</td></tr>';
           return;
@@ -464,7 +485,7 @@
             </tr>
           `;
         }).join('');
-      } catch (e) { tbody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-rose-500">Error memuat data.</td></tr>'; }
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-rose-500">Error: ${e.message}</td></tr>`; }
     }
 
     function showCreateGroupForm() {
@@ -480,13 +501,12 @@
     }
 
     async function submitNewGroup() {
-      if (!db) return;
       const name = document.getElementById('groupName').value.trim();
       const province = document.getElementById('groupProvince').value.trim();
       const regency = document.getElementById('groupRegency').value.trim();
       if (!name) return alert('Nama sekolah harus diisi!');
 
-      await db.collection('schools').add({ name, province, regency, createdAt: new Date() });
+      await addDocToCollection('schools', { name, province, regency, createdAt: new Date() });
       showGroupListView();
     }
 
@@ -500,10 +520,10 @@
     }
 
     async function loadSchoolTokens(schoolId) {
-      if (!db) return;
       const container = document.getElementById('schoolTokensList');
+      container.innerHTML = '<p class="text-xs text-slate-400">Memuat daftar token...</p>';
       try {
-        const snap = await db.collection('tokens').where('schoolId', '==', schoolId).get();
+        const snap = await getDocsByQuery('tokens', 'schoolId', '==', schoolId);
         if (snap.empty) {
           container.innerHTML = '<p class="text-xs text-slate-400">Belum ada token yang dibuat untuk sekolah ini.</p>';
           return;
@@ -522,7 +542,7 @@
             </div>
           `;
         }).join('');
-      } catch (e) { container.innerHTML = '<p class="text-xs text-rose-500">Error memuat token.</p>'; }
+      } catch (e) { container.innerHTML = `<p class="text-xs text-rose-500">Error: ${e.message}</p>`; }
     }
 
     async function showCreateTokenModal() {
@@ -530,7 +550,7 @@
       if (!cls || !currentActiveSchool) return;
 
       const randomToken = "UJI" + Math.floor(100 + Math.random() * 900);
-      await db.collection('tokens').add({
+      await addDocToCollection('tokens', {
         schoolId: currentActiveSchool.id,
         schoolName: currentActiveSchool.name,
         className: cls,
@@ -542,12 +562,12 @@
     }
 
     async function loadBankSoal() {
-      if (!db) return;
       const tbody = document.getElementById('tableQuestionsBody');
+      tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Memuat butir soal...</td></tr>';
       try {
-        const snap = await db.collection('questions').get();
+        const snap = await getCollectionDocs('questions');
         if (snap.empty) {
-          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada soal terdaftar. Klik "Isi Soal Standar Otomatis".</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Belum ada soal terdaftar. Klik tombol "Isi Soal Standar Otomatis".</td></tr>';
           return;
         }
         tbody.innerHTML = snap.docs.map(doc => {
@@ -563,11 +583,10 @@
             </tr>
           `;
         }).join('');
-      } catch (e) { tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-rose-500">Error memuat soal.</td></tr>'; }
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-500">Error memuat soal: ${e.message}</td></tr>`; }
     }
 
     async function handleSeedStandardQuestions() {
-      if (!db) return;
       const btn = document.getElementById('btnSeedQuestions');
       btn.disabled = true;
       btn.textContent = "Mengunggah Soal...";
@@ -601,19 +620,24 @@
         }
       ];
 
-      for (const q of initialQuestions) {
-        await db.collection('questions').add(q);
+      try {
+        for (const q of initialQuestions) {
+          await addDocToCollection('questions', q);
+        }
+        await loadBankSoal();
+      } catch (err) {
+        alert("Gagal menambahkan soal: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Isi Soal Standar Otomatis";
       }
-      btn.disabled = false;
-      btn.textContent = "Isi Soal Standar Otomatis";
-      loadBankSoal();
     }
 
     async function loadReportsData() {
-      if (!db) return;
       const tbody = document.getElementById('tableReportsBody');
+      tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">Memuat hasil nilai...</td></tr>';
       try {
-        const snap = await db.collection('results').get();
+        const snap = await getCollectionDocs('results');
         if (snap.empty) {
           tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400">Belum ada siswa yang menyelesaikan ujian.</td></tr>';
           return;
@@ -634,7 +658,7 @@
             </td>
           </tr>
         `).join('');
-      } catch (e) { tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-rose-500">Error memuat rekap.</td></tr>'; }
+      } catch (e) { tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-rose-500">Error: ${e.message}</td></tr>`; }
     }
 
     function viewReportModal(idx) {
